@@ -8,6 +8,7 @@
 
 int main()
 {
-    fileCopy("file1.txt", "file2.txt");
-    printf("Success!");
+    // vcs v;
+    // vcs_init(&v);
+    printf("%d\n", vcs_add_file("hello.txt", "master"));
 }

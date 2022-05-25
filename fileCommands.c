@@ -24,6 +24,7 @@ int is_diff(char *filename1, char *filename2)
     return 0;
 }
 
+// Copy contents of source file into destination file(removes previous contents of destination file)
 int fileCopy(char *source, char *destination)
 {
     FILE *fp1 = fopen(source, "r");

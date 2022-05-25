@@ -1,2 +1,2 @@
 final:
-	cc fileCommands.c main.c -o try
+	cc fileCommands.c vcs.c main.c -o try
