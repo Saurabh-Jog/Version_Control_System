@@ -43,3 +43,13 @@ int fileCopy(char *source, char *destination)
     }
     return 1;
 }
+
+int is_compatible(char name[])
+{
+    int size = strlen(name);
+    if (!strcmp(name + size - 2, ".c") || !strcmp(name + size - 2, ".h") || !strcmp(name + size - 4, ".txt"))
+    {
+        return 1;
+    }
+    return 0;
+}

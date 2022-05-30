@@ -8,7 +8,23 @@
 
 int main()
 {
-    // vcs v;
-    // vcs_init(&v);
-    printf("%d\n", vcs_add_file("hello.txt", "master"));
+    vcs v;
+    // printf("%d\n", vcs_init(&v));
+    vcs_init(&v);
+
+    while (1)
+    {
+        int a;
+        printf("Enter a value: ");
+        scanf("%d", &a);
+        vcs_track(&v, "master");
+        printf("hehe\n");
+        node *p = v->FL;
+        while (p)
+        {
+            printf("%d\n", p->deleted);
+            p = p->next;
+        }
+    }
+    // printf("%d\n", is_compatible("hello.tx"));
 }
