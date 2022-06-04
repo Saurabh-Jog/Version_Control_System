@@ -9,22 +9,23 @@
 int main()
 {
     vcs v;
-    // printf("%d\n", vcs_init(&v));
     vcs_init(&v);
-
-    while (1)
+    printf("Success\n");
+    // vcs_track(&v, "master");
+    int a;
+    printf("Enter loop on or off: ");
+    scanf("%d", &a);
+    while (a)
     {
-        int a;
         printf("Enter a value: ");
         scanf("%d", &a);
+
         vcs_track(&v, "master");
-        printf("hehe\n");
         node *p = v->FL;
         while (p)
         {
-            printf("%d\n", p->deleted);
+            printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
             p = p->next;
         }
     }
-    // printf("%d\n", is_compatible("hello.tx"));
 }

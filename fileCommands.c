@@ -8,7 +8,11 @@
 int is_diff(char *filename1, char *filename2)
 {
     FILE *fp1 = fopen(filename1, "r");
+    if (!fp1)
+        return 0;
     FILE *fp2 = fopen(filename2, "r");
+    if (!fp2)
+        return 0;
 
     while (!feof(fp1) && !feof(fp2))
     {
@@ -25,7 +29,7 @@ int is_diff(char *filename1, char *filename2)
 }
 
 // Copy contents of source file into destination file(removes previous contents of destination file)
-int fileCopy(char *source, char *destination)
+int file_copy(char *source, char *destination)
 {
     FILE *fp1 = fopen(source, "r");
     if (!fp1)
@@ -41,6 +45,8 @@ int fileCopy(char *source, char *destination)
         fputc(ch, fp2);
         ch = fgetc(fp1);
     }
+    fclose(fp1);
+    fclose(fp2);
     return 1;
 }
 
