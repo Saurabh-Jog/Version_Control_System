@@ -69,8 +69,8 @@ int vcs_init(vcs *v)
             strcpy(current_file_address, "../");
             strcat(current_file_address, p->filename);
             file_copy(current_file_address, zeroth_commit_address);
-            // free(zeroth_commit_address);
-            // free(current_file_address);
+            free(zeroth_commit_address);
+            free(current_file_address);
             p = p->next;
         }
     }
@@ -192,7 +192,62 @@ int vcs_track(vcs *v, char *branch)
     return 1;
 }
 
-// int vcs_commit(vcs *v, char *branch)
-// {
+int vcs_commit(vcs *v, char *branch)
+{
+    vcs q;
+    q = *v;
+    while (q)
+    {
+        if (!strcmp(branch, q->name))
+            break;
+        q = q->next;
+    }
+    q->commit++;
 
-// }
+    char commit_address[30];
+    strcpy(commit_address, ".vcs/");
+    strcat(commit_address, q->name);
+    strcat(commit_address, "/C");
+    char commit_num[5];
+    sprintf(commit_num, "%d", q->commit);
+    strcat(commit_address, commit_num);
+    char command[60] = "mkdir ";
+    strcat(command, commit_address);
+    system(command);
+
+    node *p = q->FL;
+    while (p)
+    {
+        if (!p->deleted)
+        {
+            char new_version_address[50];
+            strcpy(new_version_address, commit_address);
+            strcat(new_version_address, "/");
+            strcat(new_version_address, p->filename);
+            char current_version_address[30] = "../";
+            strcat(current_version_address, p->filename);
+            file_copy(current_version_address, new_version_address);
+            p->modified = 0;
+            p = p->next;
+        }
+        else
+        {
+            node *r = p;
+            p = p->next;
+            node *s = q->FL;
+
+            if (q->FL == r)
+            {
+                q->FL = r->next;
+            }
+            else
+            {
+                while (s->next != r)
+                    s = s->next;
+                s->next = r->next;
+            }
+            free(r);
+        }
+    }
+    return 1;
+}

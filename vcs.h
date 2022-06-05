@@ -21,4 +21,4 @@ typedef branch *vcs;
 
 int vcs_init(vcs *v);
 int vcs_track(vcs *v, char *branch);
-// int vcs_commit(vcs *v, char *branch);
+int vcs_commit(vcs *v, char *branch);
