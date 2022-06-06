@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
-#include "fileCommands.h"
+#include "file_functions.h"
 
 int is_diff(char *filename1, char *filename2)
 {

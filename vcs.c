@@ -4,14 +4,14 @@
 #include <dirent.h>
 #include <limits.h>
 #include "vcs.h"
-#include "fileCommands.h"
+#include "file_functions.h"
 typedef struct dirent *dir;
 
-int vcs_init(vcs *v)
+void vcs_init(vcs *v)
 {
     *v = (branch *)malloc(sizeof(branch));
     if (!*v)
-        return 0;
+        return;
     (*v)->name = (char *)malloc(sizeof(char) * 7);
     strcpy((*v)->name, "master");
     (*v)->FL = NULL;
@@ -20,7 +20,7 @@ int vcs_init(vcs *v)
 
     DIR *dr = opendir("../");
     if (!dr)
-        return 0;
+        return;
     dir sd;
     while ((sd = readdir(dr)) != NULL)
     {
@@ -28,7 +28,7 @@ int vcs_init(vcs *v)
         {
             node *nn = (node *)malloc(sizeof(node));
             if (!nn)
-                return 0;
+                return;
             nn->filename = (char *)malloc(sizeof(char) * strlen(sd->d_name));
             strcpy(nn->filename, sd->d_name);
             nn->deleted = 0;
@@ -41,6 +41,8 @@ int vcs_init(vcs *v)
     closedir(dr);
 
     DIR *dr1 = opendir(".");
+    if (!dr1)
+        return;
     dir sd1;
     int flag = 1;
     while ((sd1 = readdir(dr1)) != NULL)
@@ -75,10 +77,10 @@ int vcs_init(vcs *v)
         }
     }
     closedir(dr1);
-    return 1;
+    return;
 }
 
-int vcs_track(vcs *v, char *branch)
+void vcs_track(vcs *v, char *branch)
 {
     vcs q;
     q = *v;
@@ -94,7 +96,7 @@ int vcs_track(vcs *v, char *branch)
         p->tracked = 1;
         DIR *dr1 = opendir("../");
         if (!dr1)
-            return 0;
+            return;
         dir sd1;
         int flag1 = 1;
         while ((sd1 = readdir(dr1)) != NULL)
@@ -123,7 +125,7 @@ int vcs_track(vcs *v, char *branch)
 
             DIR *dr2 = opendir(previous_commit_address);
             if (!dr2)
-                return 0;
+                return;
             dir sd2;
             while ((sd2 = readdir(dr2)) != NULL)
             {
@@ -155,7 +157,7 @@ int vcs_track(vcs *v, char *branch)
     }
     DIR *dr = opendir("../");
     if (!dr)
-        return 0;
+        return;
     dir sd;
     while ((sd = readdir(dr)) != NULL)
     {
@@ -177,7 +179,7 @@ int vcs_track(vcs *v, char *branch)
             {
                 node *nn = (node *)malloc(sizeof(node));
                 if (!nn)
-                    return 0;
+                    return;
                 nn->filename = (char *)malloc(sizeof(char) * strlen(sd->d_name));
                 strcpy(nn->filename, sd->d_name);
                 nn->deleted = 0;
@@ -189,10 +191,10 @@ int vcs_track(vcs *v, char *branch)
         }
     }
     closedir(dr);
-    return 1;
+    return;
 }
 
-int vcs_commit(vcs *v, char *branch)
+void vcs_commit(vcs *v, char *branch)
 {
     vcs q;
     q = *v;
@@ -220,15 +222,18 @@ int vcs_commit(vcs *v, char *branch)
     {
         if (!p->deleted)
         {
-            char new_version_address[50];
+            char *new_version_address = (char *)malloc(sizeof(char) * 50);
             strcpy(new_version_address, commit_address);
             strcat(new_version_address, "/");
             strcat(new_version_address, p->filename);
-            char current_version_address[30] = "../";
+            char *current_version_address = (char *)malloc(sizeof(char) * 30);
+            strcpy(current_version_address, "../");
             strcat(current_version_address, p->filename);
             file_copy(current_version_address, new_version_address);
             p->modified = 0;
             p = p->next;
+            free(new_version_address);
+            free(current_version_address);
         }
         else
         {
@@ -249,5 +254,91 @@ int vcs_commit(vcs *v, char *branch)
             free(r);
         }
     }
-    return 1;
+    return;
+}
+
+void vcs_revert(vcs *v, char *branch, int version)
+{
+    vcs q;
+    q = *v;
+    while (q)
+    {
+        if (!strcmp(branch, q->name))
+            break;
+        q = q->next;
+    }
+    if (version > q->commit || version < 0)
+    {
+        printf("invalid version id!\n");
+        return;
+    }
+
+    DIR *dr = opendir("../");
+    if (!dr)
+        return;
+    dir sd;
+    char *parent_path = (char *)malloc(sizeof(char) * 3);
+    strcpy(parent_path, "../");
+    while ((sd = readdir(dr)) != NULL)
+    {
+        if (is_compatible(sd->d_name))
+        {
+            char *current_version_path = (char *)malloc(sizeof(char) * 25);
+            strcpy(current_version_path, parent_path);
+            strcat(current_version_path, sd->d_name);
+            remove(current_version_path);
+            free(current_version_path);
+        }
+    }
+    closedir(dr);
+    free(parent_path);
+
+    while (q->FL)
+    {
+        node *p = q->FL;
+        q->FL = p->next;
+        free(p);
+    }
+
+    char revert_path[40] = ".vcs/";
+    strcat(revert_path, branch);
+    strcat(revert_path, "/C");
+    char revert_commit_number[5];
+    sprintf(revert_commit_number, "%d", version);
+    strcat(revert_path, revert_commit_number);
+    DIR *dr1 = opendir(revert_path);
+    if (!dr1)
+        return;
+    dir sd1;
+
+    while ((sd1 = readdir(dr1)) != NULL)
+    {
+        if (is_compatible(sd1->d_name))
+        {
+            char *parent_path = (char *)malloc(sizeof(char) * 3);
+            strcpy(parent_path, "../");
+            char *revert_version_path = (char *)malloc(sizeof(char) * 60);
+            strcpy(revert_version_path, revert_path);
+            strcat(revert_version_path, "/");
+            strcat(revert_version_path, sd1->d_name);
+            char *current_version_path = (char *)malloc(sizeof(char) * 30);
+            strcpy(current_version_path, parent_path);
+            strcat(current_version_path, sd1->d_name);
+            file_copy(revert_version_path, current_version_path);
+
+            node *nn = (node *)malloc(sizeof(node));
+            nn->filename = (char *)malloc(sizeof(char) * strlen(sd1->d_name));
+            strcpy(nn->filename, sd1->d_name);
+            nn->tracked = 0;
+            nn->modified = 0;
+            nn->deleted = 0;
+            nn->next = q->FL;
+            q->FL = nn;
+            free(revert_version_path);
+            free(current_version_path);
+            free(parent_path);
+        }
+    }
+    closedir(dr1);
+    return;
 }
