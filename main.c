@@ -16,6 +16,14 @@ int main()
     int b = 0;
     while (a)
     {
+        node *p = v->FL;
+        while (p)
+        {
+            printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
+            p = p->next;
+        }
+        // printf("%s %d\n", v->name, v->commit);
+        printf("\n");
         printf("wanna track?: ");
         scanf("%d", &b);
         if (b)

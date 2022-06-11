@@ -9,37 +9,6 @@ typedef struct dirent *dir;
 
 void vcs_init(vcs *v)
 {
-    *v = (branch *)malloc(sizeof(branch));
-    if (!*v)
-        return;
-    (*v)->name = (char *)malloc(sizeof(char) * 7);
-    strcpy((*v)->name, "master");
-    (*v)->FL = NULL;
-    (*v)->next = NULL;
-    (*v)->commit = 0;
-
-    DIR *dr = opendir("../");
-    if (!dr)
-        return;
-    dir sd;
-    while ((sd = readdir(dr)) != NULL)
-    {
-        if (is_compatible(sd->d_name))
-        {
-            node *nn = (node *)malloc(sizeof(node));
-            if (!nn)
-                return;
-            nn->filename = (char *)malloc(sizeof(char) * strlen(sd->d_name));
-            strcpy(nn->filename, sd->d_name);
-            nn->deleted = 0;
-            nn->modified = 0;
-            nn->tracked = 0;
-            nn->next = (*v)->FL;
-            (*v)->FL = nn;
-        }
-    }
-    closedir(dr);
-
     DIR *dr1 = opendir(".");
     if (!dr1)
         return;
@@ -53,11 +22,46 @@ void vcs_init(vcs *v)
             break;
         }
     }
+    closedir(dr1);
+
     if (flag)
     {
+        *v = (branch *)malloc(sizeof(branch));
+        if (!*v)
+            return;
+        (*v)->name = (char *)malloc(sizeof(char) * 7);
+        strcpy((*v)->name, "master");
+        (*v)->FL = NULL;
+        (*v)->next = NULL;
+        (*v)->commit = 0;
+
+        DIR *dr = opendir("../");
+        if (!dr)
+            return;
+        dir sd;
+        while ((sd = readdir(dr)) != NULL)
+        {
+            if (is_compatible(sd->d_name))
+            {
+                node *nn = (node *)malloc(sizeof(node));
+                if (!nn)
+                    return;
+                nn->filename = (char *)malloc(sizeof(char) * strlen(sd->d_name));
+                strcpy(nn->filename, sd->d_name);
+                nn->deleted = 0;
+                nn->modified = 0;
+                nn->tracked = 0;
+                nn->next = (*v)->FL;
+                (*v)->FL = nn;
+            }
+        }
+        closedir(dr);
+
         system("mkdir .vcs");
         system("mkdir .vcs/master");
         system("mkdir .vcs/master/C0");
+        // FILE *fp = fopen(".vcs/master/save.txt", "w");
+        // fclose(fp);
 
         node *p = (*v)->FL;
         while (p)
@@ -75,8 +79,71 @@ void vcs_init(vcs *v)
             free(current_file_address);
             p = p->next;
         }
+        return;
     }
-    closedir(dr1);
+
+    DIR *dr = opendir(".vcs");
+    if (!dr)
+        return;
+    dir sd;
+    while ((sd = readdir(dr)) != NULL)
+    {
+        if (sd->d_name[0] != '.')
+        {
+            char *branch_address = (char *)malloc(sizeof(char) * 30);
+            strcpy(branch_address, ".vcs/");
+            strcat(branch_address, sd->d_name);
+            branch *nb = (branch *)malloc(sizeof(branch));
+            nb->name = (char *)malloc(sizeof(char) * 20);
+            strcpy(nb->name, sd->d_name);
+            nb->next = NULL;
+            nb->FL = NULL;
+            nb->commit = -1;
+            DIR *dr1 = opendir(branch_address);
+            if (!dr1)
+                return;
+            dir sd1;
+            while ((sd1 = readdir(dr1)) != NULL)
+            {
+                if (sd1->d_name[0] != '.')
+                    nb->commit++;
+            }
+            closedir(dr1);
+            char *last_commit = (char *)malloc(sizeof(char) * 40);
+            strcpy(last_commit, ".vcs/");
+            strcat(last_commit, sd->d_name);
+            strcat(last_commit, "/C");
+            char commit_num[5];
+            sprintf(commit_num, "%d", nb->commit);
+            strcat(last_commit, commit_num);
+            DIR *dr2 = opendir(last_commit);
+            if (!dr2)
+                return;
+            dir sd2;
+            while ((sd2 = readdir(dr2)) != NULL)
+            {
+                if (sd2->d_name[0] != '.')
+                {
+                    node *nn = (node *)malloc(sizeof(node));
+                    nn->filename = (char *)malloc(sizeof(char) * 20);
+                    strcpy(nn->filename, sd2->d_name);
+                    nn->modified = 0;
+                    nn->deleted = 0;
+                    nn->tracked = 0;
+                    nn->next = NULL;
+
+                    nn->next = nb->FL;
+                    nb->FL = nn;
+                }
+            }
+            closedir(dr2);
+            nb->next = (*v);
+            (*v) = nb;
+            free(branch_address);
+            free(last_commit);
+        }
+    }
+    closedir(dr);
     return;
 }
 
