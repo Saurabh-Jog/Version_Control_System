@@ -5,6 +5,7 @@
 #include <limits.h>
 #include "vcs.h"
 #include "file_functions.h"
+#include "colour.h"
 typedef struct dirent *dir;
 
 void vcs_init(vcs *V)
@@ -67,11 +68,9 @@ void vcs_init(vcs *V)
         node *p = v->FL;
         while (p)
         {
-            // char zeroth_commit_address[strlen(p->filename) + 20] = ".vcs/master/C0/";
             char *zeroth_commit_address = (char *)malloc(sizeof(char) * (strlen(p->filename) + 20));
             strcpy(zeroth_commit_address, ".vcs/master/C0/");
             strcat(zeroth_commit_address, p->filename);
-            // char current_file_address[strlen(p->filename) + 5] = "../";
             char *current_file_address = (char *)malloc(sizeof(char) * (strlen(p->filename) + 5));
             strcpy(current_file_address, "../");
             strcat(current_file_address, p->filename);
@@ -110,6 +109,8 @@ void vcs_init(vcs *V)
             dir sd1;
             while ((sd1 = readdir(dr1)) != NULL)
             {
+                if (!strcmp(sd1->d_name, "log.txt"))
+                    continue;
                 if (sd1->d_name[0] != '.')
                     nb->commit++;
             }
@@ -265,6 +266,9 @@ void vcs_track(vcs *V)
 
 int vcs_check(vcs *V, int mode)
 {
+    if (mode)
+        red();
+
     int all_tracked = 1;
     branch *q = V->B;
     while (q)
@@ -291,6 +295,7 @@ int vcs_check(vcs *V, int mode)
                 }
                 p = p->next;
             }
+
             if (!flag)
             {
                 all_tracked = 0;
@@ -368,8 +373,10 @@ int vcs_check(vcs *V, int mode)
     {
         if (!mode)
             return 1;
-        printf("All changes tracked\n");
+        green();
+        printf("No untracked changes\n");
     }
+    yellow();
     return 1;
 }
 
@@ -379,15 +386,26 @@ void vcs_status(vcs *V)
     return;
 }
 
-// void add_to_log(vcs *V, char *commit_message)
-// {
-// }
+void add_to_log(vcs *V, char *commit_message)
+{
+    char log_address[40] = ".vcs/";
+    strcat(log_address, V->current_branch);
+    strcat(log_address, "/");
+    strcat(log_address, "log.txt");
+    FILE *fp = fopen(log_address, "a");
+    fprintf(fp, commit_message);
+    // fprintf(fp, "\n");
+    fclose(fp);
+    return;
+}
 
-void vcs_commit(vcs *V)
+void vcs_commit(vcs *V, char *message)
 {
     if (!vcs_check(V, 0))
     {
+        red();
         printf("Untracked changes detected! Use 'vcs track' to track changes\n");
+        yellow();
         return;
     }
 
@@ -448,6 +466,7 @@ void vcs_commit(vcs *V)
             free(r);
         }
     }
+    add_to_log(V, message);
     return;
 }
 
@@ -462,7 +481,9 @@ void vcs_revert(vcs *V, int version)
     }
     if (version > q->commit || version < 0)
     {
+        red();
         printf("invalid version id!\n");
+        yellow();
         return;
     }
 
@@ -538,14 +559,14 @@ void vcs_revert(vcs *V, int version)
 
 void vcs_branch(vcs *V, char *b)
 {
-
     branch *q = V->B;
-
     while (q)
     {
         if (!strcmp(q->name, b))
         {
+            red();
             printf("Branch already exists\n");
+            yellow();
             return;
         }
         q = q->next;
@@ -591,9 +612,14 @@ void vcs_branch(vcs *V, char *b)
     char command[40] = "mkdir ";
     strcat(command, new_branch_address);
     system(command);
+    char log_address[50];
+    strcpy(log_address, new_branch_address);
+    strcat(log_address, "/log.txt");
+    FILE *fp = fopen(log_address, "w");
+    fclose(fp);
     free(new_branch_address);
 
-    vcs_commit(V);
+    vcs_commit(V, "");
     return;
 }
 
@@ -610,4 +636,50 @@ void vcs_checkout(vcs *V, char *b)
 
     vcs_revert(V, q->commit);
     return;
+}
+
+void vcs_log(vcs *V)
+{
+    cyan();
+    branch *q = V->B;
+    while (q)
+    {
+        if (!strcmp(V->current_branch, q->name))
+            break;
+        q = q->next;
+    }
+    char log_address[50] = ".vcs/";
+    strcat(log_address, V->current_branch);
+    strcat(log_address, "/log.txt");
+    FILE *fp = fopen(log_address, "r");
+    int i = q->commit;
+    for (i; i > 0; i--)
+    {
+        int new_line = i - 1;
+        while (new_line)
+        {
+            if (fgetc(fp) == '\n')
+                new_line--;
+        }
+
+        printf("commit id: %d\n", i);
+        char message[120] = "message: ";
+        char c = '\0';
+        while (c != '\n')
+        {
+            c = fgetc(fp);
+            char s[5];
+            sprintf(s, "%c", c);
+            strcat(message, s);
+        }
+        printf("%s\n", message);
+        rewind(fp);
+    }
+    yellow();
+    return;
+}
+
+char *get_current_branch(vcs *V)
+{
+    return V->current_branch;
 }
