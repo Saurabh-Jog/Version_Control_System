@@ -61,8 +61,8 @@ void vcs_init(vcs *V)
         system("mkdir .vcs");
         system("mkdir .vcs/master");
         system("mkdir .vcs/master/C0");
-        // FILE *fp = fopen(".vcs/master/save.txt", "w");
-        // fclose(fp);
+        FILE *fp = fopen(".vcs/master/log.txt", "w");
+        fclose(fp);
 
         node *p = v->FL;
         while (p)
@@ -203,18 +203,15 @@ void vcs_track(vcs *V)
             {
                 if (!strcmp(p->filename, sd2->d_name))
                 {
-                    // char previous_version_address[strlen(previous_commit_address) + strlen(p->filename) + 5];
-                    char *previous_version_address = (char *)malloc(sizeof(char) * (strlen(previous_commit_address) + strlen(p->filename) + 5));
+                    char *previous_version_address = (char *)malloc(sizeof(char) * 100);
                     strcpy(previous_version_address, previous_commit_address);
                     strcat(previous_version_address, "/");
                     strcat(previous_version_address, p->filename);
-                    // char current_version_address[strlen(p->filename) + 5] = "../";
-                    char *current_version_address = (char *)malloc(sizeof(char) * (strlen(p->filename) + 5));
+                    char *current_version_address = (char *)malloc(sizeof(char) * 50);
                     strcpy(current_version_address, "../");
                     strcat(current_version_address, p->filename);
                     if (is_diff(previous_version_address, current_version_address))
                     {
-                        // printf("I am is_diff\n");
                         p->modified = 1;
                     }
                     free(previous_version_address);
@@ -266,8 +263,134 @@ void vcs_track(vcs *V)
     return;
 }
 
+int vcs_check(vcs *V, int mode)
+{
+    int all_tracked = 1;
+    branch *q = V->B;
+    while (q)
+    {
+        if (!strcmp(q->name, V->current_branch))
+            break;
+        q = q->next;
+    }
+
+    DIR *dr = opendir("../");
+    dir sd;
+    while ((sd = readdir(dr)) != NULL)
+    {
+        if (is_compatible(sd->d_name))
+        {
+            node *p = q->FL;
+            int flag = 0;
+            while (p)
+            {
+                if (!strcmp(p->filename, sd->d_name))
+                {
+                    flag = 1;
+                    break;
+                }
+                p = p->next;
+            }
+            if (!flag)
+            {
+                all_tracked = 0;
+                if (!mode)
+                    return 0;
+                printf("%s (untracked)\n", sd->d_name);
+            }
+        }
+    }
+    closedir(dr);
+
+    node *p = q->FL;
+    while (p)
+    {
+        if (!p->deleted)
+        {
+            int flag = 0;
+            DIR *dr1 = opendir("../");
+            dir sd1;
+            while ((sd1 = readdir(dr1)) != NULL)
+            {
+                if (is_compatible(sd1->d_name) && !strcmp(p->filename, sd1->d_name))
+                {
+                    flag = 1;
+                    break;
+                }
+            }
+            closedir(dr1);
+            if (!flag)
+            {
+                all_tracked = 0;
+                if (!mode)
+                    return 0;
+                printf("%s (deleted)\n", p->filename);
+            }
+        }
+        p = p->next;
+    }
+
+    char *previous_commit_address = (char *)malloc(sizeof(char) * 50);
+    strcpy(previous_commit_address, ".vcs/");
+    char previous_commit_num[5];
+    sprintf(previous_commit_num, "%d", q->commit);
+    strcat(previous_commit_address, q->name);
+    strcat(previous_commit_address, "/C");
+    strcat(previous_commit_address, previous_commit_num);
+
+    p = q->FL;
+    while (p)
+    {
+        if (!p->deleted && !p->modified)
+        {
+            char *previous_version_address = (char *)malloc(sizeof(char) * 100);
+            strcpy(previous_version_address, previous_commit_address);
+            strcat(previous_version_address, "/");
+            strcat(previous_version_address, p->filename);
+            char *current_version_address = (char *)malloc(sizeof(char) * 50);
+            strcpy(current_version_address, "../");
+            strcat(current_version_address, p->filename);
+            if (is_diff(previous_version_address, current_version_address))
+            {
+                all_tracked = 0;
+                if (!mode)
+                    return 0;
+                printf("%s (modified)\n", p->filename);
+            }
+            free(previous_version_address);
+            free(current_version_address);
+        }
+        p = p->next;
+    }
+    free(previous_commit_address);
+
+    if (all_tracked)
+    {
+        if (!mode)
+            return 1;
+        printf("All changes tracked\n");
+    }
+    return 1;
+}
+
+void vcs_status(vcs *V)
+{
+    vcs_check(V, 1);
+    return;
+}
+
+// void add_to_log(vcs *V, char *commit_message)
+// {
+// }
+
 void vcs_commit(vcs *V)
 {
+    if (!vcs_check(V, 0))
+    {
+        printf("Untracked changes detected! Use 'vcs track' to track changes\n");
+        return;
+    }
+
     branch *q = V->B;
     while (q)
     {
@@ -481,9 +604,7 @@ void vcs_checkout(vcs *V, char *b)
     while (q)
     {
         if (!strcmp(q->name, b))
-        {
             break;
-        }
         q = q->next;
     }
 

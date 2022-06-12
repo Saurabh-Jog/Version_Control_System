@@ -17,30 +17,37 @@ int main()
     while (a)
     {
         printf("%s\n", V.current_branch);
-        branch *q = V.B;
-        while (q)
-        {
-            if (!strcmp(q->name, V.current_branch))
-                break;
-            q = q->next;
-        }
+        // branch *q = V.B;
+        // while (q)
+        // {
+        //     if (!strcmp(q->name, V.current_branch))
+        //         break;
+        //     q = q->next;
+        // }
 
-        node *p = q->FL;
-        while (p)
-        {
-            printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
-            p = p->next;
-        }
+        // node *p = q->FL;
+        // while (p)
+        // {
+        //     printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
+        //     p = p->next;
+        // }
+        // printf("\n");
         printf("\n");
-        printf("\n");
+        printf("wanna check status?: ");
+        scanf("%d", &b);
+        if (b)
+            vcs_status(&V);
+
         printf("wanna track?: ");
         scanf("%d", &b);
         if (b)
             vcs_track(&V);
+
         printf("wanna commit?: ");
         scanf("%d", &b);
         if (b)
             vcs_commit(&V);
+
         printf("wanna go back?: ");
         scanf("%d", &b);
         if (b)
@@ -49,13 +56,14 @@ int main()
             printf("Enter version number: ");
             scanf("%d", &c);
             vcs_revert(&V, c);
-            node *p = V.B->FL;
-            while (p)
-            {
-                printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
-                p = p->next;
-            }
+            // node *p = V.B->FL;
+            // while (p)
+            // {
+            //     printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
+            //     p = p->next;
+            // }
         }
+
         printf("branch?: ");
         scanf("%d", &b);
         if (b)
