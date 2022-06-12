@@ -67,6 +67,16 @@ int main()
             vcs_branch(&V, branch);
         }
 
+        printf("Wanna change branch?: ");
+        scanf("%d", &b);
+        if (b)
+        {
+            char branch[20];
+            printf("Enter branch name: ");
+            scanf("%s", branch);
+            vcs_checkout(&V, branch);
+        }
+
         printf("Continue loop: ");
         scanf("%d", &a);
     }

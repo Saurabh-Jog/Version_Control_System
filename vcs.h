@@ -29,3 +29,4 @@ void vcs_track(vcs *V);
 void vcs_commit(vcs *V);
 void vcs_revert(vcs *V, int version);
 void vcs_branch(vcs *V, char *branch);
+void vcs_checkout(vcs *V, char *b);

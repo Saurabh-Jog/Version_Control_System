@@ -474,3 +474,10 @@ void vcs_branch(vcs *V, char *b)
     vcs_commit(V);
     return;
 }
+
+void vcs_checkout(vcs *V, char *b)
+{
+    strcpy(V->current_branch, b);
+    vcs_revert(V, V->B->commit);
+    return;
+}
