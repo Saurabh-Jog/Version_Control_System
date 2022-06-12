@@ -7,8 +7,8 @@
 
 int main()
 {
-    vcs v;
-    vcs_init(&v);
+    vcs V;
+    vcs_init(&V);
     printf("Success\n");
     int a = 1;
     printf("loop on or off: ");
@@ -16,22 +16,32 @@ int main()
     int b = 0;
     while (a)
     {
-        node *p = v->FL;
+        printf("%s\n", V.current_branch);
+        branch *q = V.B;
+        while (q)
+        {
+            if (!strcmp(q->name, V.current_branch))
+                break;
+            q = q->next;
+        }
+
+        node *p = q->FL;
         while (p)
         {
             printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
             p = p->next;
         }
-        // printf("%s %d\n", v->name, v->commit);
+        printf("%s %d\n", V.B->name, V.B->commit);
+        printf("\n");
         printf("\n");
         printf("wanna track?: ");
         scanf("%d", &b);
         if (b)
-            vcs_track(&v, "master");
+            vcs_track(&V);
         printf("wanna commit?: ");
         scanf("%d", &b);
         if (b)
-            vcs_commit(&v, "master");
+            vcs_commit(&V);
         printf("wanna go back?: ");
         scanf("%d", &b);
         if (b)
@@ -39,13 +49,22 @@ int main()
             int c;
             printf("Enter version number: ");
             scanf("%d", &c);
-            vcs_revert(&v, "master", c);
-            node *p = v->FL;
+            vcs_revert(&V, c);
+            node *p = V.B->FL;
             while (p)
             {
                 printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
                 p = p->next;
             }
+        }
+        printf("branch?: ");
+        scanf("%d", &b);
+        if (b)
+        {
+            char branch[20];
+            printf("Enter branch name: ");
+            scanf("%s", branch);
+            vcs_branch(&V, branch);
         }
 
         printf("Continue loop: ");

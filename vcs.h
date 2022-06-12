@@ -17,9 +17,15 @@ typedef struct branch
     int commit;
 } branch;
 
-typedef branch *vcs;
+// typedef branch *vcs;
+typedef struct vcs
+{
+    branch *B;
+    char *current_branch;
+} vcs;
 
-void vcs_init(vcs *v);
-void vcs_track(vcs *v, char *branch);
-void vcs_commit(vcs *v, char *branch);
-void vcs_revert(vcs *v, char *branch, int version);
+void vcs_init(vcs *V);
+void vcs_track(vcs *V);
+void vcs_commit(vcs *V);
+void vcs_revert(vcs *V, int version);
+void vcs_branch(vcs *V, char *branch);

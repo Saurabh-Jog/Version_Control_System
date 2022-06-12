@@ -7,7 +7,7 @@
 #include "file_functions.h"
 typedef struct dirent *dir;
 
-void vcs_init(vcs *v)
+void vcs_init(vcs *V)
 {
     DIR *dr1 = opendir(".");
     if (!dr1)
@@ -26,14 +26,15 @@ void vcs_init(vcs *v)
 
     if (flag)
     {
-        *v = (branch *)malloc(sizeof(branch));
-        if (!*v)
-            return;
-        (*v)->name = (char *)malloc(sizeof(char) * 7);
-        strcpy((*v)->name, "master");
-        (*v)->FL = NULL;
-        (*v)->next = NULL;
-        (*v)->commit = 0;
+        V->current_branch = (char *)malloc(sizeof(char) * 20);
+        strcpy(V->current_branch, "master");
+        V->B = (branch *)malloc(sizeof(branch));
+        branch *v = V->B;
+        v->name = (char *)malloc(sizeof(char) * 20);
+        strcpy(v->name, "master");
+        v->FL = NULL;
+        v->next = NULL;
+        v->commit = 0;
 
         DIR *dr = opendir("../");
         if (!dr)
@@ -51,8 +52,8 @@ void vcs_init(vcs *v)
                 nn->deleted = 0;
                 nn->modified = 0;
                 nn->tracked = 0;
-                nn->next = (*v)->FL;
-                (*v)->FL = nn;
+                nn->next = v->FL;
+                v->FL = nn;
             }
         }
         closedir(dr);
@@ -63,7 +64,7 @@ void vcs_init(vcs *v)
         // FILE *fp = fopen(".vcs/master/save.txt", "w");
         // fclose(fp);
 
-        node *p = (*v)->FL;
+        node *p = v->FL;
         while (p)
         {
             // char zeroth_commit_address[strlen(p->filename) + 20] = ".vcs/master/C0/";
@@ -82,6 +83,10 @@ void vcs_init(vcs *v)
         return;
     }
 
+    V->current_branch = (char *)malloc(sizeof(char) * 20);
+    strcpy(V->current_branch, "master");
+    V->B = NULL;
+    branch *v = V->B;
     DIR *dr = opendir(".vcs");
     if (!dr)
         return;
@@ -137,8 +142,9 @@ void vcs_init(vcs *v)
                 }
             }
             closedir(dr2);
-            nb->next = (*v);
-            (*v) = nb;
+
+            nb->next = V->B;
+            V->B = nb;
             free(branch_address);
             free(last_commit);
         }
@@ -147,13 +153,12 @@ void vcs_init(vcs *v)
     return;
 }
 
-void vcs_track(vcs *v, char *branch)
+void vcs_track(vcs *V)
 {
-    vcs q;
-    q = *v;
+    branch *q = V->B;
     while (q)
     {
-        if (!strcmp(branch, q->name))
+        if (!strcmp(V->current_branch, q->name))
             break;
         q = q->next;
     }
@@ -182,11 +187,11 @@ void vcs_track(vcs *v, char *branch)
         if (!p->modified)
         {
             // char previous_commit_address[strlen(branch) + 22] = ".vcs/";
-            char *previous_commit_address = (char *)malloc(sizeof(char) * (strlen(branch) + 22));
+            char *previous_commit_address = (char *)malloc(sizeof(char) * 50);
             strcpy(previous_commit_address, ".vcs/");
             char previous_commit_num[5];
             sprintf(previous_commit_num, "%d", q->commit);
-            strcat(previous_commit_address, branch);
+            strcat(previous_commit_address, q->name);
             strcat(previous_commit_address, "/C");
             strcat(previous_commit_address, previous_commit_num);
 
@@ -261,13 +266,12 @@ void vcs_track(vcs *v, char *branch)
     return;
 }
 
-void vcs_commit(vcs *v, char *branch)
+void vcs_commit(vcs *V)
 {
-    vcs q;
-    q = *v;
+    branch *q = V->B;
     while (q)
     {
-        if (!strcmp(branch, q->name))
+        if (!strcmp(V->current_branch, q->name))
             break;
         q = q->next;
     }
@@ -324,13 +328,12 @@ void vcs_commit(vcs *v, char *branch)
     return;
 }
 
-void vcs_revert(vcs *v, char *branch, int version)
+void vcs_revert(vcs *V, int version)
 {
-    vcs q;
-    q = *v;
+    branch *q = V->B;
     while (q)
     {
-        if (!strcmp(branch, q->name))
+        if (!strcmp(V->current_branch, q->name))
             break;
         q = q->next;
     }
@@ -368,7 +371,7 @@ void vcs_revert(vcs *v, char *branch, int version)
     }
 
     char revert_path[40] = ".vcs/";
-    strcat(revert_path, branch);
+    strcat(revert_path, q->name);
     strcat(revert_path, "/C");
     char revert_commit_number[5];
     sprintf(revert_commit_number, "%d", version);
@@ -407,5 +410,67 @@ void vcs_revert(vcs *v, char *branch, int version)
         }
     }
     closedir(dr1);
+    return;
+}
+
+void vcs_branch(vcs *V, char *b)
+{
+
+    branch *q = V->B;
+
+    while (q)
+    {
+        if (!strcmp(q->name, b))
+        {
+            printf("Branch already exists\n");
+            return;
+        }
+        q = q->next;
+    }
+    printf("*\n");
+    branch *nb = (branch *)malloc(sizeof(branch));
+    nb->name = (char *)malloc(sizeof(char) * 20);
+    strcpy(nb->name, b);
+    nb->next = NULL;
+    nb->FL = NULL;
+    nb->commit = -1;
+
+    q = V->B;
+    while (q)
+    {
+        if (!strcmp(q->name, V->current_branch))
+            break;
+        q = q->next;
+    }
+
+    node *p = q->FL;
+    while (p)
+    {
+        node *nn = (node *)malloc(sizeof(node));
+        nn->filename = (char *)malloc(sizeof(20));
+        strcpy(nn->filename, p->filename);
+        nn->tracked = 0;
+        nn->modified = 0;
+        nn->deleted = 0;
+        nn->next = NULL;
+
+        nn->next = nb->FL;
+        nb->FL = nn;
+        p = p->next;
+    }
+
+    nb->next = V->B;
+    V->B = nb;
+    strcpy(V->current_branch, b);
+
+    char *new_branch_address = (char *)malloc(sizeof(char) * 30);
+    strcpy(new_branch_address, ".vcs/");
+    strcat(new_branch_address, b);
+    char command[40] = "mkdir ";
+    strcat(command, new_branch_address);
+    system(command);
+    free(new_branch_address);
+
+    vcs_commit(V);
     return;
 }
