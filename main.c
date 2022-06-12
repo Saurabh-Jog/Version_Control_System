@@ -31,7 +31,6 @@ int main()
             printf("filename: %s, tracked: %d, modified: %d, deleted: %d\n", p->filename, p->tracked, p->modified, p->deleted);
             p = p->next;
         }
-        printf("%s %d\n", V.B->name, V.B->commit);
         printf("\n");
         printf("\n");
         printf("wanna track?: ");

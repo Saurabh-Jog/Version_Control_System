@@ -427,7 +427,6 @@ void vcs_branch(vcs *V, char *b)
         }
         q = q->next;
     }
-    printf("*\n");
     branch *nb = (branch *)malloc(sizeof(branch));
     nb->name = (char *)malloc(sizeof(char) * 20);
     strcpy(nb->name, b);
@@ -478,6 +477,16 @@ void vcs_branch(vcs *V, char *b)
 void vcs_checkout(vcs *V, char *b)
 {
     strcpy(V->current_branch, b);
-    vcs_revert(V, V->B->commit);
+    branch *q = V->B;
+    while (q)
+    {
+        if (!strcmp(q->name, b))
+        {
+            break;
+        }
+        q = q->next;
+    }
+
+    vcs_revert(V, q->commit);
     return;
 }
