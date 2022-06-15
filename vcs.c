@@ -662,7 +662,7 @@ void vcs_log(vcs *V)
                 new_line--;
         }
 
-        printf("commit id: %d\n", i);
+        printf("version id: %d\n", i);
         char message[120] = "message: ";
         char c = '\0';
         while (c != '\n')
